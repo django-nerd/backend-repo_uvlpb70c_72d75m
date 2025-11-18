@@ -8,7 +8,7 @@ from bson import ObjectId
 from database import db, create_document, get_documents
 from schemas import Product
 
-app = FastAPI(title="Hardware Store API", version="1.0.0")
+app = FastAPI(title="Hardware Store API", version="1.1.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -121,6 +121,100 @@ def get_product(product_id: str):
     if not doc:
         raise HTTPException(status_code=404, detail="Not found")
     return serialize_product(doc)
+
+
+@app.post("/api/seed")
+def seed_products():
+    """Insert a curated set of example products if they don't already exist.
+    Returns number of products inserted.
+    """
+    if db is None:
+        raise HTTPException(status_code=500, detail="Database not initialized")
+
+    sample = [
+        {
+            "title": "Cordless Drill Driver 20V (2 Batteries)",
+            "description": "Compact 20V drill/driver with 2x 2.0Ah batteries, charger, and case.",
+            "price": 129.99,
+            "category": "power-tools",
+            "in_stock": True,
+            "image_url": "https://images.unsplash.com/photo-1604671801908-6df44230996e?q=80&w=1200&auto=format&fit=crop",
+            "brand": "ToolPro"
+        },
+        {
+            "title": "Brushless Impact Driver 18V",
+            "description": "High‑torque brushless impact driver, variable speed, belt clip included.",
+            "price": 149.0,
+            "category": "power-tools",
+            "in_stock": True,
+            "image_url": "https://images.unsplash.com/photo-1605146768851-eda79da39894?q=80&w=1200&auto=format&fit=crop",
+            "brand": "VoltMax"
+        },
+        {
+            "title": "Claw Hammer 16oz Fiberglass",
+            "description": "Durable fiberglass handle with non‑slip grip and polished steel head.",
+            "price": 19.99,
+            "category": "hand-tools",
+            "in_stock": True,
+            "image_url": "https://images.unsplash.com/photo-1581092921461-eab62e97a14f?q=80&w=1200&auto=format&fit=crop",
+            "brand": "ForgeMaster"
+        },
+        {
+            "title": "Pro Screwdriver Set (10pc)",
+            "description": "Magnetic tips, chrome‑vanadium steel, organized storage tray.",
+            "price": 24.5,
+            "category": "hand-tools",
+            "in_stock": True,
+            "image_url": "https://images.unsplash.com/photo-1597692493640-5c0f1ca2ab40?q=80&w=1200&auto=format&fit=crop",
+            "brand": "PrecisionX"
+        },
+        {
+            "title": "Assorted Wood Screws (200pc)",
+            "description": "Multi‑size zinc‑plated wood screws in resealable box.",
+            "price": 12.49,
+            "category": "fasteners",
+            "in_stock": True,
+            "image_url": "https://images.unsplash.com/photo-1610259110184-ef316b7cbb60?q=80&w=1200&auto=format&fit=crop",
+            "brand": "GripTite"
+        },
+        {
+            "title": "LED Work Light Rechargeable",
+            "description": "1000‑lumen folding work light with magnetic base and USB‑C charging.",
+            "price": 34.95,
+            "category": "electrical",
+            "in_stock": False,
+            "image_url": "https://images.unsplash.com/photo-1487058792275-0ad4aaf24ca7?q=80&w=1200&auto=format&fit=crop",
+            "brand": "BrightBeam"
+        },
+        {
+            "title": "PTFE Thread Seal Tape (10 Rolls)",
+            "description": "For leak‑free pipe fittings; 1/2 in. x 520 in.",
+            "price": 9.99,
+            "category": "plumbing",
+            "in_stock": True,
+            "image_url": "https://images.unsplash.com/photo-1503387762-592deb58ef4e?q=80&w=1200&auto=format&fit=crop",
+            "brand": "SealSure"
+        },
+        {
+            "title": "Interior Wall Paint, Satin 1 Gal",
+            "description": "Low‑odor, quick‑drying acrylic latex paint; great coverage.",
+            "price": 32.0,
+            "category": "paint",
+            "in_stock": True,
+            "image_url": "https://images.unsplash.com/photo-1507666664345-c492233acf60?q=80&w=1200&auto=format&fit=crop",
+            "brand": "ColorCraft"
+        },
+    ]
+
+    inserted = 0
+    for p in sample:
+        # Avoid duplicates by title
+        existing = db["product"].find_one({"title": p["title"]})
+        if not existing:
+            db["product"].insert_one(p)
+            inserted += 1
+
+    return {"inserted": inserted}
 
 
 if __name__ == "__main__":
